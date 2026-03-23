@@ -4,9 +4,16 @@ import { Pool } from "pg";
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
+function cleanConnectionString(url: string): string {
+  const u = new URL(url);
+  u.searchParams.delete("sslmode");
+  u.searchParams.delete("channel_binding");
+  return u.toString();
+}
+
 function createPrismaClient() {
   const pool = new Pool({
-    connectionString: process.env.DATABASE_URL!,
+    connectionString: cleanConnectionString(process.env.DATABASE_URL!),
     ssl: { rejectUnauthorized: false },
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
