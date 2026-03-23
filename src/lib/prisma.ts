@@ -11,10 +11,11 @@ if (typeof WebSocket === "undefined") {
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
 function cleanConnectionString(url: string): string {
-  const u = new URL(url);
-  u.searchParams.delete("channel_binding");
-  u.searchParams.delete("sslmode");
-  return u.toString();
+  // URLクラスを使わず正規表現で確実にパラメータを除去
+  return url
+    .replace(/[?&]channel_binding=[^&]*/gi, "")
+    .replace(/[?&]sslmode=[^&]*/gi, "")
+    .replace(/\?$/, "");
 }
 
 function createPrismaClient() {
