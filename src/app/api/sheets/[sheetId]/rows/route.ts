@@ -26,6 +26,9 @@ export async function GET(
       orderBy: { rowIndex: "asc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
+      include: {
+        rowManager: { select: { id: true, name: true, email: true } },
+      },
     }),
     prisma.row.count({ where: { sheetId } }),
   ]);

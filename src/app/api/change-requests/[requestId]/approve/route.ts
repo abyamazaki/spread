@@ -12,21 +12,21 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const role = (session.user as { role?: string })?.role;
-  if (role !== "APPROVER" && role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
   const { requestId } = await params;
 
   try {
     await prisma.$transaction(async (tx) => {
       const request = await tx.changeRequest.findUnique({
         where: { id: requestId },
-        include: { cells: true },
+        include: { cells: true, sheet: { select: { createdBy: true } } },
       });
 
       if (!request) throw new Error("Not found");
+
+      // シート管理者のみ承認可能
+      if (request.sheet.createdBy !== session.user.id) {
+        throw new Error("シート管理者のみが承認できます");
+      }
       if (request.status !== "PENDING") {
         throw new Error("This request is already processed");
       }

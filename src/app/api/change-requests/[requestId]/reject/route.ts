@@ -12,21 +12,25 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const role = (session.user as { role?: string })?.role;
-  if (role !== "APPROVER" && role !== "ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
   const { requestId } = await params;
   const body = await req.json();
   const { comment } = body as { comment?: string };
 
   const request = await prisma.changeRequest.findUnique({
     where: { id: requestId },
+    include: { sheet: { select: { createdBy: true } } },
   });
 
   if (!request) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  // シート管理者のみ却下可能
+  if (request.sheet.createdBy !== session.user.id) {
+    return NextResponse.json(
+      { error: "シート管理者のみが却下できます" },
+      { status: 403 }
+    );
   }
 
   if (request.status !== "PENDING") {

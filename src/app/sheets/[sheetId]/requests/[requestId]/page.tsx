@@ -25,7 +25,7 @@ export default async function RequestDetailPage({
     include: {
       requester: { select: { name: true } },
       reviewer: { select: { name: true } },
-      sheet: { select: { name: true } },
+      sheet: { select: { name: true, createdBy: true } },
       cells: {
         include: { row: { select: { rowIndex: true } } },
         orderBy: [{ rowId: "asc" }, { columnKey: "asc" }],
@@ -36,10 +36,9 @@ export default async function RequestDetailPage({
   if (!request || request.sheetId !== sheetId) notFound();
 
   const config = statusConfig[request.status];
-  const role = (session?.user as { role?: string })?.role;
   const canReview =
     request.status === "PENDING" &&
-    (role === "APPROVER" || role === "ADMIN");
+    session?.user?.id === request.sheet.createdBy;
 
   return (
     <div className="max-w-4xl">

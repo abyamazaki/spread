@@ -22,6 +22,7 @@ model User {
   sheets           Sheet[]
   changeRequests   ChangeRequest[] @relation("requester")
   reviewedRequests ChangeRequest[] @relation("reviewer")
+  managedRows      Row[]           @relation("rowManager")
 
   @@map("spread_users")
 }
@@ -37,11 +38,12 @@ enum Role {
 // ============================================================
 model Sheet {
   id        String   @id @default(cuid())
-  name      String
-  columns   Json
-  createdBy String   @map("created_by")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  name          String
+  columns       Json
+  lockedColumns Json     @default("[]") @map("locked_columns")
+  createdBy     String   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   creator        User            @relation(fields: [createdBy], references: [id])
   rows           Row[]
@@ -54,14 +56,16 @@ model Sheet {
 // Row (one row of data, stored as JSONB)
 // ============================================================
 model Row {
-  id        String   @id @default(cuid())
-  sheetId   String   @map("sheet_id")
-  rowIndex  Int      @map("row_index")
-  data      Json
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id           String   @id @default(cuid())
+  sheetId      String   @map("sheet_id")
+  rowIndex     Int      @map("row_index")
+  data         Json
+  rowManagerId String?  @map("row_manager_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   sheet       Sheet        @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  rowManager  User?        @relation("rowManager", fields: [rowManagerId], references: [id])
   changeCells ChangeCell[]
 
   @@unique([sheetId, rowIndex])
