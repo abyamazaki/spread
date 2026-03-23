@@ -1,21 +1,16 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaNeon } from "@prisma/adapter-neon";
-import { neonConfig, Pool } from "@neondatabase/serverless";
-import ws from "ws";
-
-// サーバーレス環境で WebSocket を使用
-if (typeof WebSocket === "undefined") {
-  neonConfig.webSocketConstructor = ws;
-}
+import { PrismaPg } from "@prisma/adapter-pg";
+import pg from "pg";
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
 function createPrismaClient() {
-  const pool = new Pool({
+  const pool = new pg.Pool({
     connectionString: process.env.DATABASE_URL!,
+    ssl: { rejectUnauthorized: false },
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const adapter = new PrismaNeon(pool as any);
+  const adapter = new PrismaPg(pool as any);
   return new PrismaClient({ adapter });
 }
 
