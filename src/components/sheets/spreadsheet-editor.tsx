@@ -185,9 +185,9 @@ export function SpreadsheetEditor({
       size: 50,
     },
     ...sheetColumns.map(
-      (col): ColumnDef<RowData> => ({
-        id: col,
-        header: col,
+      (col, idx): ColumnDef<RowData> => ({
+        id: col || `_col_${idx}`,
+        header: col || "(名称なし)",
         cell: ({ row }) => (
           <EditableCell
             value={row.original.data[col] ?? ""}
