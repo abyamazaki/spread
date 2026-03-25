@@ -20,7 +20,7 @@ export async function GET(
     Math.max(1, Number(searchParams.get("pageSize")) || 50)
   );
 
-  const [rows, total] = await Promise.all([
+  const [rows, total, pendingChangeCells] = await Promise.all([
     prisma.row.findMany({
       where: { sheetId },
       orderBy: { rowIndex: "asc" },
@@ -31,7 +31,24 @@ export async function GET(
       },
     }),
     prisma.row.count({ where: { sheetId } }),
+    prisma.changeCell.findMany({
+      where: {
+        changeRequest: { sheetId, status: "PENDING" },
+      },
+      select: { rowId: true, columnKey: true },
+    }),
   ]);
+
+  // rowId -> columnKey[] のマップを作成
+  const pendingCells: Record<string, string[]> = {};
+  for (const cell of pendingChangeCells) {
+    if (!pendingCells[cell.rowId]) {
+      pendingCells[cell.rowId] = [];
+    }
+    if (!pendingCells[cell.rowId].includes(cell.columnKey)) {
+      pendingCells[cell.rowId].push(cell.columnKey);
+    }
+  }
 
   return NextResponse.json({
     rows,
@@ -41,5 +58,6 @@ export async function GET(
       total,
       totalPages: Math.ceil(total / pageSize),
     },
+    pendingCells,
   });
 }

@@ -51,6 +51,7 @@ function EditableCell({
   rowId,
   columnKey,
   isChanged,
+  isPending,
   editable,
   lockReason,
   onEdit,
@@ -59,6 +60,7 @@ function EditableCell({
   rowId: string;
   columnKey: string;
   isChanged: boolean;
+  isPending: boolean;
   editable: boolean;
   lockReason?: string;
   onEdit: (
@@ -102,11 +104,13 @@ function EditableCell({
 
   const bgClass = isChanged
     ? "bg-yellow-100"
-    : lockReason === "locked"
-      ? "bg-gray-100"
-      : lockReason === "not_row_manager"
-        ? "bg-gray-50"
-        : "";
+    : isPending
+      ? "bg-blue-100"
+      : lockReason === "locked"
+        ? "bg-gray-100"
+        : lockReason === "not_row_manager"
+          ? "bg-gray-50"
+          : "";
 
   return (
     <div
@@ -117,13 +121,15 @@ function EditableCell({
         if (editable) setEditing(true);
       }}
       title={
-        !editable
-          ? lockReason === "locked"
-            ? "この列はロックされています"
-            : lockReason === "row_manager_column"
-              ? "行管理者カラムは編集できません"
-              : "この行の編集権限がありません"
-          : "ダブルクリックで編集"
+        isPending
+          ? "承認申請中"
+          : !editable
+            ? lockReason === "locked"
+              ? "この列はロックされています"
+              : lockReason === "row_manager_column"
+                ? "行管理者カラムは編集できません"
+                : "この行の編集権限がありません"
+            : "ダブルクリックで編集"
       }
     >
       {value || "\u00A0"}
@@ -180,6 +186,7 @@ export function SpreadsheetEditor({
   const [lockedColumns, setLockedColumns] = useState<string[]>(initialLockedColumns);
   const [showLockSettings, setShowLockSettings] = useState(false);
   const [users, setUsers] = useState<UserInfo[]>([]);
+  const [pendingCells, setPendingCells] = useState<Record<string, string[]>>({});
   const [savingManagers, setSavingManagers] = useState(false);
   const [pendingManagerAssignments, setPendingManagerAssignments] = useState<
     Map<string, string | null>
@@ -214,6 +221,7 @@ export function SpreadsheetEditor({
       const data = await res.json();
       setRows(data.rows);
       setPagination(data.pagination);
+      setPendingCells(data.pendingCells ?? {});
       setLoading(false);
     },
     [sheetId]
@@ -299,6 +307,7 @@ export function SpreadsheetEditor({
 
       clearChanges();
       setMessage("変更申請を送信しました");
+      fetchRows(pagination.page);
     } catch (err) {
       setMessage(
         err instanceof Error ? err.message : "エラーが発生しました"
@@ -430,6 +439,7 @@ export function SpreadsheetEditor({
                 rowId={row.original.id}
                 columnKey={col}
                 isChanged={isChanged(row.original.id, col)}
+                isPending={pendingCells[row.original.id]?.includes(col) ?? false}
                 editable={editable}
                 lockReason={reason}
                 onEdit={handleEdit}
@@ -447,6 +457,7 @@ export function SpreadsheetEditor({
       handleManagerAssign,
       getCellEditability,
       isChanged,
+      pendingCells,
       handleEdit,
     ]
   );
