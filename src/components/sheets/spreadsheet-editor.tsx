@@ -562,7 +562,7 @@ export function SpreadsheetEditor({
               {table.getRowModel().rows.map((row) => (
                 <tr key={row.id} className="hover:bg-gray-50">
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-3 py-1">
+                    <td key={cell.id} className="whitespace-nowrap px-3 py-1">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()

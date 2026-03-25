@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -179,14 +180,21 @@ export default function UsersPage() {
                   </Badge>
                 </td>
                 <td className="px-6 py-4">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(user.id)}
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    削除
-                  </Button>
+                  <div className="flex gap-2">
+                    <Link href={`/admin/users/${user.id}/edit`}>
+                      <Button variant="ghost" size="sm">
+                        編集
+                      </Button>
+                    </Link>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(user.id)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      削除
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}

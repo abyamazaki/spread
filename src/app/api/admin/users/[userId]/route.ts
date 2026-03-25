@@ -3,6 +3,35 @@ import { hash } from "bcryptjs";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+// GET /api/admin/users/[userId] - ユーザー取得
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ userId: string }> }
+) {
+  const session = await auth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const role = (session.user as { role?: string })?.role;
+  if (role !== "ADMIN") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const { userId } = await params;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, email: true, name: true, role: true, createdAt: true },
+  });
+
+  if (!user) {
+    return NextResponse.json({ error: "ユーザーが見つかりません" }, { status: 404 });
+  }
+
+  return NextResponse.json(user);
+}
+
 // PATCH /api/admin/users/[userId] - ユーザー更新
 export async function PATCH(
   req: NextRequest,
