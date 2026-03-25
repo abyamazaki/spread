@@ -187,6 +187,8 @@ export function SpreadsheetEditor({
   const [showLockSettings, setShowLockSettings] = useState(false);
   const [users, setUsers] = useState<UserInfo[]>([]);
   const [pendingCells, setPendingCells] = useState<Record<string, string[]>>({});
+  const [submitComment, setSubmitComment] = useState("");
+  const [showSubmitForm, setShowSubmitForm] = useState(false);
   const [savingManagers, setSavingManagers] = useState(false);
   const [pendingManagerAssignments, setPendingManagerAssignments] = useState<
     Map<string, string | null>
@@ -297,6 +299,7 @@ export function SpreadsheetEditor({
         body: JSON.stringify({
           sheetId,
           cells: changeList,
+          comment: submitComment || undefined,
         }),
       });
 
@@ -306,6 +309,8 @@ export function SpreadsheetEditor({
       }
 
       clearChanges();
+      setSubmitComment("");
+      setShowSubmitForm(false);
       setMessage("変更申請を送信しました");
       fetchRows(pagination.page);
     } catch (err) {
@@ -524,15 +529,42 @@ export function SpreadsheetEditor({
               </Button>
               <Button
                 size="sm"
-                onClick={handleSubmit}
+                onClick={() => setShowSubmitForm(!showSubmitForm)}
                 disabled={submitting}
               >
-                {submitting ? "送信中..." : "承認申請"}
+                承認申請
               </Button>
             </>
           )}
         </div>
       </div>
+
+      {/* 承認申請フォーム */}
+      {showSubmitForm && changeCount > 0 && (
+        <div className="mb-4 space-y-2 rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <p className="text-sm font-medium text-blue-800">
+            {changeCount} 件の変更を申請します
+          </p>
+          <input
+            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            placeholder="コメント（任意）"
+            value={submitComment}
+            onChange={(e) => setSubmitComment(e.target.value)}
+          />
+          <div className="flex gap-2">
+            <Button size="sm" onClick={handleSubmit} disabled={submitting}>
+              {submitting ? "送信中..." : "申請を送信"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSubmitForm(false)}
+            >
+              キャンセル
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* カラムロック設定パネル */}
       {showLockSettings && isSheetManager && (

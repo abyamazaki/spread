@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 // POST /api/change-requests/[requestId]/approve - 承認してデータ反映
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ requestId: string }> }
 ) {
   const session = await auth();
@@ -13,6 +13,8 @@ export async function POST(
   }
 
   const { requestId } = await params;
+  const body = await req.json().catch(() => ({}));
+  const { comment } = body as { comment?: string };
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -85,6 +87,7 @@ export async function POST(
         data: {
           status: "APPROVED",
           reviewerId: session.user.id,
+          reviewComment: comment || undefined,
         },
       });
     });

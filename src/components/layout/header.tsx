@@ -48,6 +48,12 @@ export function Header() {
           {role && (
             <Badge variant="secondary">{roleLabels[role] ?? role}</Badge>
           )}
+          <Link
+            href="/profile/password"
+            className="text-sm text-gray-600 hover:text-gray-900"
+          >
+            パスワード変更
+          </Link>
           <Button
             variant="ghost"
             size="sm"

@@ -8,13 +8,19 @@ import { Input } from "@/components/ui/input";
 export function ReviewActions({
   requestId,
   sheetId,
+  canReview,
+  isRequester,
 }: {
   requestId: string;
   sheetId: string;
+  canReview: boolean;
+  isRequester: boolean;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [approveComment, setApproveComment] = useState("");
   const [rejectComment, setRejectComment] = useState("");
+  const [showApprove, setShowApprove] = useState(false);
   const [showReject, setShowReject] = useState(false);
   const [error, setError] = useState("");
 
@@ -25,7 +31,11 @@ export function ReviewActions({
     try {
       const res = await fetch(
         `/api/change-requests/${requestId}/approve`,
-        { method: "POST" }
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ comment: approveComment || undefined }),
+        }
       );
 
       if (!res.ok) {
@@ -70,24 +80,86 @@ export function ReviewActions({
     }
   }
 
+  async function handleWithdraw() {
+    if (!confirm("この変更リクエストを取り下げますか？")) return;
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch(
+        `/api/change-requests/${requestId}/withdraw`,
+        { method: "POST" }
+      );
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error);
+      }
+
+      router.push(`/sheets/${sheetId}/requests`);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "取り下げに失敗しました");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (!canReview && !isRequester) return null;
+
   return (
     <div className="mt-6 space-y-4 rounded-lg border border-gray-200 bg-white p-4">
-      <h3 className="font-semibold text-gray-900">レビューアクション</h3>
+      <h3 className="font-semibold text-gray-900">アクション</h3>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex items-center gap-3">
-        <Button onClick={handleApprove} disabled={loading}>
-          {loading ? "処理中..." : "承認する"}
-        </Button>
-        <Button
-          variant="destructive"
-          onClick={() => setShowReject(!showReject)}
-          disabled={loading}
-        >
-          却下する
-        </Button>
+        {canReview && (
+          <>
+            <Button
+              onClick={() => {
+                setShowApprove(!showApprove);
+                setShowReject(false);
+              }}
+              disabled={loading}
+            >
+              承認する
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setShowReject(!showReject);
+                setShowApprove(false);
+              }}
+              disabled={loading}
+            >
+              却下する
+            </Button>
+          </>
+        )}
+        {isRequester && (
+          <Button
+            variant="outline"
+            onClick={handleWithdraw}
+            disabled={loading}
+          >
+            {loading ? "処理中..." : "取り下げ"}
+          </Button>
+        )}
       </div>
+
+      {showApprove && (
+        <div className="space-y-2">
+          <Input
+            placeholder="承認コメント（任意）"
+            value={approveComment}
+            onChange={(e) => setApproveComment(e.target.value)}
+          />
+          <Button size="sm" onClick={handleApprove} disabled={loading}>
+            {loading ? "処理中..." : "承認を確定"}
+          </Button>
+        </div>
+      )}
 
       {showReject && (
         <div className="space-y-2">
@@ -102,7 +174,7 @@ export function ReviewActions({
             onClick={handleReject}
             disabled={loading}
           >
-            却下を確定
+            {loading ? "処理中..." : "却下を確定"}
           </Button>
         </div>
       )}

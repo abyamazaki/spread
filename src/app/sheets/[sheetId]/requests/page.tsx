@@ -10,6 +10,7 @@ const statusConfig = {
   PENDING: { label: "申請中", variant: "warning" as const },
   APPROVED: { label: "承認済み", variant: "success" as const },
   REJECTED: { label: "却下", variant: "destructive" as const },
+  WITHDRAWN: { label: "取り下げ", variant: "secondary" as const },
 };
 
 export default async function RequestsPage({

@@ -10,6 +10,7 @@ const statusConfig = {
   PENDING: { label: "申請中", variant: "warning" as const },
   APPROVED: { label: "承認済み", variant: "success" as const },
   REJECTED: { label: "却下", variant: "destructive" as const },
+  WITHDRAWN: { label: "取り下げ", variant: "secondary" as const },
 };
 
 export default async function RequestDetailPage({
@@ -39,6 +40,9 @@ export default async function RequestDetailPage({
   const canReview =
     request.status === "PENDING" &&
     session?.user?.id === request.sheet.createdBy;
+  const isRequester =
+    request.status === "PENDING" &&
+    session?.user?.id === request.requesterId;
 
   const sheetColumns = (request.sheet.columns ?? []) as string[];
 
@@ -254,9 +258,14 @@ export default async function RequestDetailPage({
         })}
       </div>
 
-      {/* 承認/却下アクション */}
-      {canReview && (
-        <ReviewActions requestId={requestId} sheetId={sheetId} />
+      {/* アクション（承認/却下/取り下げ） */}
+      {(canReview || isRequester) && (
+        <ReviewActions
+          requestId={requestId}
+          sheetId={sheetId}
+          canReview={canReview}
+          isRequester={isRequester}
+        />
       )}
     </div>
   );
