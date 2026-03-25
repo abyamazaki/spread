@@ -544,6 +544,26 @@ export function SpreadsheetEditor({
         />
       )}
 
+      {/* 凡例 */}
+      <div className="mb-2 flex items-center gap-4 text-xs text-gray-600">
+        <div className="flex items-center gap-1">
+          <span className="inline-block h-3 w-3 rounded bg-yellow-100 border border-yellow-300" />
+          編集中
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="inline-block h-3 w-3 rounded bg-blue-100 border border-blue-300" />
+          申請中
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="inline-block h-3 w-3 rounded bg-gray-100 border border-gray-300" />
+          ロック
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="inline-block h-3 w-3 rounded bg-gray-50 border border-gray-200" />
+          編集権限なし
+        </div>
+      </div>
+
       {/* テーブル */}
       <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
         {loading ? (
