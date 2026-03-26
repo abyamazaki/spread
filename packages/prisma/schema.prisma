@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// Authentication & Users
+// ============================================================
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  name           String
+  hashedPassword String   @map("hashed_password")
+  role           Role     @default(EDITOR)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  sheets           Sheet[]
+  changeRequests   ChangeRequest[] @relation("requester")
+  reviewedRequests ChangeRequest[] @relation("reviewer")
+  managedRows      Row[]           @relation("rowManager")
+
+  @@map("spread_users")
+}
+
+enum Role {
+  EDITOR
+  APPROVER
+  ADMIN
+}
+
+// ============================================================
+// Sheet (imported CSV dataset)
+// ============================================================
+model Sheet {
+  id        String   @id @default(cuid())
+  name          String
+  columns       Json
+  lockedColumns Json     @default("[]") @map("locked_columns")
+  createdBy     String   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  creator        User            @relation(fields: [createdBy], references: [id])
+  rows           Row[]
+  changeRequests ChangeRequest[]
+
+  @@map("spread_sheets")
+}
+
+// ============================================================
+// Row (one row of data, stored as JSONB)
+// ============================================================
+model Row {
+  id           String   @id @default(cuid())
+  sheetId      String   @map("sheet_id")
+  rowIndex     Int      @map("row_index")
+  data         Json
+  rowManagerId String?  @map("row_manager_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  sheet       Sheet        @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  rowManager  User?        @relation("rowManager", fields: [rowManagerId], references: [id])
+  changeCells ChangeCell[]
+
+  @@unique([sheetId, rowIndex])
+  @@map("spread_rows")
+}
+
+// ============================================================
+// Change Request (approval unit)
+// ============================================================
+model ChangeRequest {
+  id            String              @id @default(cuid())
+  sheetId       String              @map("sheet_id")
+  requesterId   String              @map("requester_id")
+  reviewerId    String?             @map("reviewer_id")
+  status        ChangeRequestStatus @default(PENDING)
+  comment       String?
+  reviewComment String?             @map("review_comment")
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+
+  sheet     Sheet        @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  requester User         @relation("requester", fields: [requesterId], references: [id])
+  reviewer  User?        @relation("reviewer", fields: [reviewerId], references: [id])
+  cells     ChangeCell[]
+
+  @@map("spread_change_requests")
+}
+
+enum ChangeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+// ============================================================
+// Change Cell (cell-level diff)
+// ============================================================
+model ChangeCell {
+  id              String @id @default(cuid())
+  changeRequestId String @map("change_request_id")
+  rowId           String @map("row_id")
+  columnKey       String @map("column_key")
+  oldValue        String? @map("old_value")
+  newValue        String? @map("new_value")
+
+  changeRequest ChangeRequest @relation(fields: [changeRequestId], references: [id], onDelete: Cascade)
+  row           Row           @relation(fields: [rowId], references: [id], onDelete: Cascade)
+
+  @@map("spread_change_cells")
+}
