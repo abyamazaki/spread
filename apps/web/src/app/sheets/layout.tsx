@@ -1,5 +1,4 @@
 import { Header } from "@/components/layout/header";
-import { Providers } from "@/components/providers";
 
 export default function SheetsLayout({
   children,
@@ -7,9 +6,9 @@ export default function SheetsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Providers>
+    <>
       <Header />
       <main className="px-4 py-6">{children}</main>
-    </Providers>
+    </>
   );
 }
